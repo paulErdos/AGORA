@@ -1,0 +1,132 @@
+========================================================================
+DOCUMENTATION
+========================================================================
+
+CONTENTS
+
+I.   Authentication
+	a. Introduction
+	b. How to Require Authentication
+	c. Limitations and Possible Fixes
+	d. Extras
+II.  Video Streaming
+	a. Introduction
+	b. What Works
+	c. Still to be Done
+	d. Extras
+III. Handling Server-Side Tasks 
+	a. Introduction
+IV.  Miscellaneous Information
+
+
+========================================================================
+I. Authentication
+========================================================================
+
+Introduction
+It's important that video rendering capabilities are inaccessible to non-NERSC users. If they weren't, attackers could use up our CPU / GPU time mining bitcoins, etc. 
+
+
+How To Require Authentication
+To require authentication for a page, link to it on portal-auth.nersc.gov. For example:
+https://portal-auth.nersc.gov/project/agora/example.html
+
+
+Limitations and Possible Fixes
+1. Currently, it's possible to access restricted pages by copying the link address and removing '-auth' from the URL. 
+Possible fix: 
+Logging in gives users a NEWT session cookie that is active until the browser is closed. It might be possible to prevent unauthorized access if the server can check whether or not the user has a NEWT cookie before serving a restricted page.
+
+
+2. NERSC's single-sign-on service "Shibboleth" does not support logging out. At the moment, the only way to truly log out is to close the browser or manually delete the session cookie. This presents numerous problems. First, it's possible to access users' personal information on the main NERSC page (NERSC.gov > My Nersc > Little Guy icon in the top right). This is an obvious danger to users' personal safety if they were to, say, have their phone or computer stolen. Additionally, it complicates switching users on the same computer. 
+Possible fix:
+Use JavaScript to delete the session cooke when a button is pressed. Once completed, this fix should be given to NERSC, as the logout issue is a known problem. 
+
+
+Extras
+NEWT's login protocol does not prevent page access. 
+
+
+========================================================================
+II. Video Streaming
+========================================================================
+
+Introduction
+Currently, Theia renders using ffmpeg, and communicates with the webpage using Tornado WebSocket Server. 
+Einaros WebSocket Server (hereafter, EWSS) is designed for speed. Numerous tests verify low latency. We use ffmpeg to stream mpeg1 to the EWSS, which then distributes the stream to an arbitrary number of clients. On the client side, the video stream is decoded using JSMpeg and rendered in an HTML5 Canvas element.
+
+
+What Works
+Currently, video can be sent by ffmpeg to a listening EWSS, and pages can initiate connections with the server and successfully render video in a browser with minimal lag.
+The video source and the EWSS don't need to be on the same network.
+
+
+Still To Be Done
+Theia needs to be configured to send video to the EWSS.
+Server-side stuff (see next section)
+
+
+Extras
+This solution works on OS X, Linux, and Windows, and on every modern browser (only a few obscure browsers, such as Opera Mini, don't work).
+
+
+========================================================================
+III. Handling Server-Side Tasks
+========================================================================
+
+Introduction
+Users shouldn't be required to do anything other than authenticate and load a web page, yet numerous server-side tasks need to be completed:
+1. Find two open ports with which to call the server
+2. Start the server listening for the video stream and ws connections
+3. Start theia
+
+1. Start the EWSS
+It's not safe to leave a server listening on a port all the time. The server needs to be started after the page has been requested. PHP can be used to call an initiator script on the server which starts the EWSS. 
+The server needs two ports that are not currently in use to start. Because of this, it's necessary to find two open ports and then call the server with these. 
+Edison's ports are very actively allocated and deallocated. Because of this, I've written a script to watch which ports get used. There seems to be a block above 8000 that is infrequently used. 
+This is where a script should start searching for open ports, and when it finds two, it should call the server with these. 
+The page should load partially, and show a message (e.g., "Starting Server...") while these are started, and unblock when the EWSS is started successfully.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
